@@ -1,0 +1,31 @@
+----- Decision Tree -----
+Best Decision Tree Parameters: {'max_depth': 10, 'min_samples_split': 10}, Best Score: 0.22
+Decision Tree Evaluation:
+accuracy: Mean = 0.782, Std = 0.024
+sensitivity: Mean = 0.511, Std = 0.048
+specificity: Mean = 0.949, Std = 0.035
+f1: Mean = 0.640, Std = 0.042
+
+----- Neural Network -----
+Best Neural Network Parameters: {'mlpclassifier__hidden_layer_sizes': (50, 50), 'mlpclassifier__learning_rate_init': 0.001}, Best Score: 0.23
+Neural Network Evaluation:
+accuracy: Mean = 0.761, Std = 0.020
+sensitivity: Mean = 0.505, Std = 0.071
+specificity: Mean = 0.919, Std = 0.073
+f1: Mean = 0.616, Std = 0.019
+
+----- SVC -----
+Best SVC Parameters: {'svc__kernel': 'rbf'}, Best Score: 0.31
+SVC Evaluation:
+accuracy: Mean = 0.691, Std = 0.015
+sensitivity: Mean = 0.189, Std = 0.040
+specificity: Mean = 1.000, Std = 0.000
+f1: Mean = 0.316, Std = 0.059
+
+----- KNN -----
+Best KNN Parameters: {'kneighborsclassifier__n_neighbors': 10}, Best Score: 0.27
+KNN Evaluation:
+accuracy: Mean = 0.728, Std = 0.011
+sensitivity: Mean = 0.429, Std = 0.047
+specificity: Mean = 0.912, Std = 0.037
+f1: Mean = 0.544, Std = 0.028
