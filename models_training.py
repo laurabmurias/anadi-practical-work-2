@@ -1,0 +1,137 @@
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVR
+from sklearn.neural_network import MLPRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.base import clone
+
+def train_linear_regression(X, y, preprocessor, kf):
+    pipeline_lr = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('regressor', LinearRegression())
+    ])
+
+    rmse_scores, mae_scores, r2_scores = [], [], []
+    for train_index, test_index in kf.split(X):
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        model = clone(pipeline_lr)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        rmse_scores.append(np.sqrt(mean_squared_error(y_test, y_pred)))
+        mae_scores.append(mean_absolute_error(y_test, y_pred))
+        r2_scores.append(r2_score(y_test, y_pred))
+
+    # Treinar o pipeline em todos os dados para retornar o modelo ajustado
+    pipeline_lr.fit(X, y)
+    return rmse_scores, mae_scores, r2_scores, pipeline_lr
+
+def train_decision_tree(X, y, preprocessor, kf, param_grid):
+    pipeline_tree = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('regressor', DecisionTreeRegressor(random_state=42))
+    ])
+    grid_search = GridSearchCV(
+        pipeline_tree,
+        param_grid,
+        cv=kf,
+        scoring='neg_mean_squared_error',
+        n_jobs=-1
+    )
+    grid_search.fit(X, y)
+    best_tree = grid_search.best_estimator_
+    best_params = grid_search.best_params_
+
+    rmse_scores, mae_scores, r2_scores = [], [], []
+    for train_index, test_index in kf.split(X):
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        model = clone(best_tree)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        rmse_scores.append(np.sqrt(mean_squared_error(y_test, y_pred)))
+        mae_scores.append(mean_absolute_error(y_test, y_pred))
+        r2_scores.append(r2_score(y_test, y_pred))
+        
+    return rmse_scores, mae_scores, r2_scores, best_tree, best_params
+
+def train_svm(X, y, preprocessor, kf, param_grid):
+    pipeline_svm = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('regressor', SVR())
+    ])
+    grid_search_svm = GridSearchCV(
+        pipeline_svm,
+        param_grid,
+        cv=kf,
+        scoring='neg_mean_squared_error',
+        n_jobs=-1
+    )
+    grid_search_svm.fit(X, y)
+    best_params = grid_search_svm.best_params_
+    
+    best_svm = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('regressor', SVR(
+            kernel=best_params['regressor__kernel'],
+            C=best_params['regressor__C'],
+            gamma=best_params['regressor__gamma'],
+            degree=best_params.get('regressor__degree', 3)
+        ))
+    ])
+
+    mae_svm, rmse_svm, r2_svm = [], [], []
+    for train_index, test_index in kf.split(X):
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        model = clone(best_svm)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        mae_svm.append(mean_absolute_error(y_test, y_pred))
+        rmse_svm.append(np.sqrt(mean_squared_error(y_test, y_pred)))
+        r2_svm.append(r2_score(y_test, y_pred))
+
+    return mae_svm, rmse_svm, r2_svm, best_svm, best_params
+
+def train_mlp(X, y, preprocessor, kf, param_grid):
+    pipeline_mlp = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('regressor', MLPRegressor(max_iter=2000, random_state=42))
+    ])
+    grid_search_mlp = GridSearchCV(
+        pipeline_mlp,
+        param_grid,
+        cv=kf,
+        scoring='neg_mean_squared_error',
+        n_jobs=-1
+    )
+    grid_search_mlp.fit(X, y)
+    best_params = grid_search_mlp.best_params_
+
+    best_mlp = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('regressor', MLPRegressor(
+            hidden_layer_sizes=best_params['regressor__hidden_layer_sizes'],
+            activation=best_params['regressor__activation'],
+            solver=best_params['regressor__solver'],
+            learning_rate_init=best_params['regressor__learning_rate_init'],
+            max_iter=2000,
+            random_state=42
+        ))
+    ])
+
+    mae_mlp, rmse_mlp, r2_mlp = [], [], []
+    for train_idx, test_idx in kf.split(X):
+        X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+        y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+        model = clone(best_mlp)
+        model.fit(X_train, y_train)
+        y_pred_fold = model.predict(X_test)
+        mae_mlp.append(mean_absolute_error(y_test, y_pred_fold))
+        rmse_mlp.append(np.sqrt(mean_squared_error(y_test, y_pred_fold)))
+        r2_mlp.append(r2_score(y_test, y_pred_fold))
+
+    return mae_mlp, rmse_mlp, r2_mlp, best_mlp, best_params
