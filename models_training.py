@@ -29,21 +29,38 @@ def train_linear_regression(X, y, preprocessor, kf):
     pipeline_lr.fit(X, y)
     return rmse_scores, mae_scores, r2_scores, pipeline_lr
 
-def train_decision_tree(X, y, preprocessor, kf, param_grid):
+def train_decision_tree(X, y, preprocessor, kf, grid_flag, param_grid):
     pipeline_tree = Pipeline(steps=[
         ('preprocessor', preprocessor),
         ('regressor', DecisionTreeRegressor(random_state=42))
     ])
-    grid_search = GridSearchCV(
-        pipeline_tree,
-        param_grid,
-        cv=kf,
-        scoring='neg_mean_squared_error',
-        n_jobs=-1
-    )
-    grid_search.fit(X, y)
-    best_tree = grid_search.best_estimator_
-    best_params = grid_search.best_params_
+
+    if grid_flag:
+        grid_search = GridSearchCV(
+            pipeline_tree,
+            param_grid,
+            cv=kf,
+            scoring='neg_mean_squared_error',
+            n_jobs=-1
+        )
+        grid_search.fit(X, y)
+        best_tree = grid_search.best_estimator_
+        best_params = grid_search.best_params_
+    else:
+        # use grid search parameters but without doing the actual search
+        def get_scalar(param):
+            return param[0] if isinstance(param, list) else param
+
+        best_tree = Pipeline(steps=[
+            ('preprocessor', preprocessor),
+            ('regressor', DecisionTreeRegressor(
+                max_depth=get_scalar(param_grid['regressor__max_depth']),
+                min_samples_split=get_scalar(param_grid['regressor__min_samples_split']),
+                min_samples_leaf=get_scalar(param_grid['regressor__min_samples_leaf']),
+                random_state=42
+            ))
+        ])
+        best_params = {k: get_scalar(v) for k, v in param_grid.items()}
 
     rmse_scores, mae_scores, r2_scores = [], [], []
     for train_index, test_index in kf.split(X):
@@ -58,20 +75,32 @@ def train_decision_tree(X, y, preprocessor, kf, param_grid):
         
     return rmse_scores, mae_scores, r2_scores, best_tree, best_params
 
-def train_svm(X, y, preprocessor, kf, param_grid):
+def train_svm(X, y, preprocessor, kf, grid_flag, param_grid):
     pipeline_svm = Pipeline(steps=[
         ('preprocessor', preprocessor),
         ('regressor', SVR())
     ])
-    grid_search_svm = GridSearchCV(
-        pipeline_svm,
-        param_grid,
-        cv=kf,
-        scoring='neg_mean_squared_error',
-        n_jobs=-1
-    )
-    grid_search_svm.fit(X, y)
-    best_params = grid_search_svm.best_params_
+    if grid_flag:
+        grid_search_svm = GridSearchCV(
+            pipeline_svm,
+            param_grid,
+            cv=kf,
+            scoring='neg_mean_squared_error',
+            n_jobs=-1
+        )
+        grid_search_svm.fit(X, y)
+        best_params = grid_search_svm.best_params_
+    else:
+        # use grid search parameters but without doing the actual search
+        def get_scalar(param):
+            return param[0] if isinstance(param, list) else param
+
+        best_params = {
+            'regressor__kernel': get_scalar(param_grid['regressor__kernel']),
+            'regressor__C': get_scalar(param_grid['regressor__C']),
+            'regressor__gamma': get_scalar(param_grid['regressor__gamma']),
+            'regressor__degree': get_scalar(param_grid.get('regressor__degree', 3))
+        }
     
     best_svm = Pipeline(steps=[
         ('preprocessor', preprocessor),
@@ -96,20 +125,32 @@ def train_svm(X, y, preprocessor, kf, param_grid):
 
     return mae_svm, rmse_svm, r2_svm, best_svm, best_params
 
-def train_mlp(X, y, preprocessor, kf, param_grid):
+def train_mlp(X, y, preprocessor, kf, grid_flag, param_grid):
     pipeline_mlp = Pipeline(steps=[
         ('preprocessor', preprocessor),
         ('regressor', MLPRegressor(max_iter=2000, random_state=42))
     ])
-    grid_search_mlp = GridSearchCV(
-        pipeline_mlp,
-        param_grid,
-        cv=kf,
-        scoring='neg_mean_squared_error',
-        n_jobs=-1
-    )
-    grid_search_mlp.fit(X, y)
-    best_params = grid_search_mlp.best_params_
+    if grid_flag:
+        grid_search_mlp = GridSearchCV(
+            pipeline_mlp,
+            param_grid,
+            cv=kf,
+            scoring='neg_mean_squared_error',
+            n_jobs=-1
+        )
+        grid_search_mlp.fit(X, y)
+        best_params = grid_search_mlp.best_params_
+    else:
+        # use grid search parameters but without doing the actual search
+        def get_scalar(param):
+            return param[0] if isinstance(param, list) else param
+
+        best_params = {
+            'regressor__hidden_layer_sizes': get_scalar(param_grid['regressor__hidden_layer_sizes']),
+            'regressor__activation': get_scalar(param_grid['regressor__activation']),
+            'regressor__solver': get_scalar(param_grid['regressor__solver']),
+            'regressor__learning_rate_init': get_scalar(param_grid['regressor__learning_rate_init'])
+        }
 
     best_mlp = Pipeline(steps=[
         ('preprocessor', preprocessor),
