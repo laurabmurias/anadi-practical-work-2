@@ -16,8 +16,15 @@ def train_linear_regression(X, y, preprocessor, kf):
 
     rmse_scores, mae_scores, r2_scores = [], [], []
     for train_index, test_index in kf.split(X):
-        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
-        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        # Suporte tanto para pandas quanto numpy
+        if hasattr(X, 'iloc'):
+            X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        else:
+            X_train, X_test = X[train_index], X[test_index]
+        if hasattr(y, 'iloc'):
+            y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        else:
+            y_train, y_test = y[train_index], y[test_index]
         model = clone(pipeline_lr)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
@@ -64,15 +71,20 @@ def train_regression_tree(X, y, preprocessor, kf, grid_flag, param_grid):
 
     rmse_scores, mae_scores, r2_scores = [], [], []
     for train_index, test_index in kf.split(X):
-        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
-        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        if hasattr(X, 'iloc'):
+            X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        else:
+            X_train, X_test = X[train_index], X[test_index]
+        if hasattr(y, 'iloc'):
+            y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        else:
+            y_train, y_test = y[train_index], y[test_index]
         model = clone(best_tree)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
         rmse_scores.append(np.sqrt(mean_squared_error(y_test, y_pred)))
         mae_scores.append(mean_absolute_error(y_test, y_pred))
         r2_scores.append(r2_score(y_test, y_pred))
-        
     return rmse_scores, mae_scores, r2_scores, best_tree, best_params
 
 def train_svm(X, y, preprocessor, kf, grid_flag, param_grid):
@@ -114,15 +126,20 @@ def train_svm(X, y, preprocessor, kf, grid_flag, param_grid):
 
     mae_svm, rmse_svm, r2_svm = [], [], []
     for train_index, test_index in kf.split(X):
-        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
-        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        if hasattr(X, 'iloc'):
+            X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        else:
+            X_train, X_test = X[train_index], X[test_index]
+        if hasattr(y, 'iloc'):
+            y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        else:
+            y_train, y_test = y[train_index], y[test_index]
         model = clone(best_svm)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
         mae_svm.append(mean_absolute_error(y_test, y_pred))
         rmse_svm.append(np.sqrt(mean_squared_error(y_test, y_pred)))
         r2_svm.append(r2_score(y_test, y_pred))
-
     return mae_svm, rmse_svm, r2_svm, best_svm, best_params
 
 def train_mlp(X, y, preprocessor, kf, grid_flag, param_grid):
@@ -171,8 +188,14 @@ def train_mlp(X, y, preprocessor, kf, grid_flag, param_grid):
 
     mae_mlp, rmse_mlp, r2_mlp = [], [], []
     for train_idx, test_idx in kf.split(X):
-        X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
-        y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+        if hasattr(X, 'iloc'):
+            X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+        else:
+            X_train, X_test = X[train_idx], X[test_idx]
+        if hasattr(y, 'iloc'):
+            y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+        else:
+            y_train, y_test = y[train_idx], y[test_idx]
         model = clone(best_mlp)
         model.fit(X_train, y_train)
         y_pred_fold = model.predict(X_test)
