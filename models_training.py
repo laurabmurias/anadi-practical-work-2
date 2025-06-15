@@ -29,7 +29,7 @@ def train_linear_regression(X, y, preprocessor, kf):
     pipeline_lr.fit(X, y)
     return rmse_scores, mae_scores, r2_scores, pipeline_lr
 
-def train_decision_tree(X, y, preprocessor, kf, grid_flag, param_grid):
+def train_regression_tree(X, y, preprocessor, kf, grid_flag, param_grid):
     pipeline_tree = Pipeline(steps=[
         ('preprocessor', preprocessor),
         ('regressor', DecisionTreeRegressor(random_state=42))
