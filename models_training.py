@@ -142,15 +142,20 @@ def train_mlp(X, y, preprocessor, kf, grid_flag, param_grid):
         best_params = grid_search_mlp.best_params_
     else:
         # use grid search parameters but without doing the actual search
-        def get_scalar(param):
+        def get_scalar(param, default=None):
+            if param is None:
+                return default
             return param[0] if isinstance(param, list) else param
 
         best_params = {
             'regressor__hidden_layer_sizes': get_scalar(param_grid['regressor__hidden_layer_sizes']),
             'regressor__activation': get_scalar(param_grid['regressor__activation']),
             'regressor__solver': get_scalar(param_grid['regressor__solver']),
-            'regressor__learning_rate_init': get_scalar(param_grid['regressor__learning_rate_init'])
         }
+        if 'regressor__learning_rate_init' in param_grid:
+            best_params['regressor__learning_rate_init'] = get_scalar(param_grid['regressor__learning_rate_init'])
+        else:
+            best_params['regressor__learning_rate_init'] = 0.001
 
     best_mlp = Pipeline(steps=[
         ('preprocessor', preprocessor),
